@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Order Confirmation</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #020202; color: #ddd; padding: 10px; text-align: center; }
+        .order-details { margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+        .total { font-weight: bold; text-align: right; }
+        .footer { margin-top: 5px; padding-top: 10px; padding-left: 10px; font-size: 0.9em; background-color: #020202; color: #ddd; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Order Confirmation</h2>
+            <p>Thank you for your order, <%= customerName %>!</p>
+        </div>
+        
+        <div class="order-details">
+            <p><strong>Order ID:</strong> <%= orderId %></p>
+            <p><strong>Order Date:</strong> <%= orderDate %></p>
+            
+            <h3>Order Summary</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% items.forEach(item => { %>
+                        <tr>
+                            <td><%= item.productName %></td>
+                            <td><%= item.quantity %></td>
+                            <td><%= item.price.toFixed(2) %></td>
+                            <td><%= item.total.toFixed(2) %></td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" class="total">Grand Total:</td>
+                        <td><%= totalAmount.toFixed(2) %></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        
+        <div class="footer">
+            <p>If you have any questions about your order, please contact our support team.</p>
+            <p>Thank you for shopping with us!</p>
+        </div>
+    </div>
+</body>
+</html>
