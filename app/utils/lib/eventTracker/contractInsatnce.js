@@ -1,6 +1,6 @@
 const ethers = require("ethers");
-const mediaAbi = require("../../../../mediaAbi.json");
-const mintAbi = require("../../../../mintAbi.json");
+const mediaAbi = require("../../../../abis/mediaAbi.json");
+const mintAbi = require("../../../../abis/mintAbi.json");
 const configObj = require("../../../../config/config");
 
 const httpProvider = new ethers.JsonRpcProvider(configObj.JSON_RPC_PROVIDER);

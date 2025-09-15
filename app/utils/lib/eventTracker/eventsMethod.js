@@ -1,7 +1,7 @@
 const Nft = require("../../../models/lib/nftSchema");
 const ethers = require("ethers");
 const { getMintContract, getMarketContract } = require("./contractInsatnce");
-const abi = require("../../../../mintAbi.json");
+const abi = require("../../../../abis/mintAbi.json");
 const configObj = require("../../../../config/config");
 
 const httpProvider = new ethers.JsonRpcProvider(configObj.JSON_RPC_PROVIDER);
