@@ -10,7 +10,7 @@ const signJWTForUser = function (user) {
   return jwt.sign(
     {
       sEmail: user.sEmail,
-      sWalletAddress:user.sWalletAddress,
+      sWalletAddress: user.sWalletAddress,
     },
     configObj.JWT_SECRET,
     {
@@ -19,11 +19,15 @@ const signJWTForUser = function (user) {
   );
 };
 
-Controller.ConnectWallet = async(req,res) => {
+Controller.ConnectWallet = async (req, res) => {
   try {
     const { sWalletAddress } = req.body;
 
-    console.log("Received sWalletAddress:", sWalletAddress, typeof sWalletAddress);
+    console.log(
+      "Received sWalletAddress:",
+      sWalletAddress,
+      typeof sWalletAddress
+    );
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -38,35 +42,48 @@ Controller.ConnectWallet = async(req,res) => {
     if (oExistingUser) {
       oExistingUser.sToken = sToken;
       await oExistingUser.save();
-      return res.reply(messages.successfully("Wallet connected"), {sWalletAddress: oExistingUser.sWalletAddress, sToken: oExistingUser.sToken , isVerified: oExistingUser.isEmailVerified , sEmail: oExistingUser.sEmail , sUsername : oExistingUser.sUsername , sUserProfileImage: oExistingUser.sUserProfileImage });
+      return res.reply(messages.successfully("Wallet connected"), {
+        sWalletAddress: oExistingUser.sWalletAddress,
+        sToken: oExistingUser.sToken,
+        isVerified: oExistingUser.isEmailVerified,
+        sEmail: oExistingUser.sEmail,
+        sUsername: oExistingUser.sUsername,
+        sUserProfileImage: oExistingUser.sUserProfileImage,
+      });
     }
 
-    console.log("Generated token:", sToken, typeof sToken); 
+    console.log("Generated token:", sToken, typeof sToken);
     const newUser = new User({
       sWalletAddress,
       sToken,
-      sUserProfileImage: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png",
+      sUserProfileImage:
+        configObj.USER_PROFILE_IMAGE_URL_DEFAULT,
     });
 
     await newUser.save();
 
-    return res.reply(messages.successfully("Wallet connected") , { sWalletAddress: newUser.sWalletAddress , sToken: newUser.sToken , isVerified: newUser.isEmailVerified , sEmail: newUser.sEmail  ,  sUsername : newUser.sUsername || "" , sUserProfileImage: newUser.sUserProfileImage });
+    return res.reply(messages.successfully("Wallet connected"), {
+      sWalletAddress: newUser.sWalletAddress,
+      sToken: newUser.sToken,
+      isVerified: newUser.isEmailVerified,
+      sEmail: newUser.sEmail,
+      sUsername: newUser.sUsername || "",
+      sUserProfileImage: newUser.sUserProfileImage,
+    });
   } catch (error) {
     return res.reply(messages.server_error(`${error}`));
   }
-}
+};
 
 Controller.verifyEmail = async (req, res) => {
   try {
+    const { sWalletAddress, sEmail } = req.body;
 
-    let { sWalletAddress , sEmail } = req.body;
-
-    if (sWalletAddress && typeof sWalletAddress === 'object' && sWalletAddress.sEmail && sWalletAddress.sWalletAddress) {
-      sEmail = sWalletAddress.sEmail;
-      sWalletAddress = sWalletAddress.sWalletAddress;
-    }
-
-    console.log("Received sWalletAddress:", sWalletAddress, typeof sWalletAddress);
+    console.log(
+      "Received sWalletAddress:",
+      sWalletAddress,
+      typeof sWalletAddress
+    );
     console.log("Received sEmail:", sEmail, typeof sEmail);
 
     const errors = validationResult(req);
@@ -76,7 +93,9 @@ Controller.verifyEmail = async (req, res) => {
       });
     }
 
-    const oExistingUser = await User.findOne({ sWalletAddress }).select("-createdAt -updatedAt -__v");
+    const oExistingUser = await User.findOne({ sWalletAddress }).select(
+      "-createdAt -updatedAt -__v"
+    );
     if (!oExistingUser) {
       return res.reply(messages.not_found("User"));
     }
@@ -85,7 +104,7 @@ Controller.verifyEmail = async (req, res) => {
     }
 
     const emailExists = await User.findOne({
-      $or: [{ sEmail }]
+      $or: [{ sEmail }],
     });
 
     if (emailExists) {
@@ -96,13 +115,15 @@ Controller.verifyEmail = async (req, res) => {
     oExistingUser.nOtp = nOtp;
     oExistingUser.nOtpExpiryTime = Date.now() + 2 * 60 * 1000; // 2 minutes expiry
 
-    const nOtpExpiresIn = new Date(oExistingUser.nOtpExpiryTime).toLocaleString();
+    const nOtpExpiresIn = new Date(
+      oExistingUser.nOtpExpiryTime
+    ).toLocaleString();
 
     await oExistingUser.save();
-    
+
     await services.send(
       "verifyEmail.ejs",
-      { otp: nOtp , nOtpExpiresIn },
+      { otp: nOtp, nOtpExpiresIn },
       {
         from: configObj.MAIL_FROM,
         to: sEmail,
@@ -111,18 +132,20 @@ Controller.verifyEmail = async (req, res) => {
     );
     return res.reply(messages.successfully("OTP sent to your email"));
   } catch (error) {
-    return res.reply(messages.server_error(`${error}`));
+    return res.reply(messages.server_error(error));
   }
 };
 
 Controller.resendOtp = async (req, res) => {
   try {
-    let { sWalletAddress , sEmail } = req.body;
-    
-    if (sWalletAddress && typeof sWalletAddress === 'object'&& sWalletAddress.sEmail && sWalletAddress.sWalletAddress) {
-      sEmail = sWalletAddress.sEmail;
-      sWalletAddress = sWalletAddress.sWalletAddress;
-    }
+    const { sWalletAddress, sEmail } = req.body;
+
+    console.log(
+      "Received sWalletAddress:",
+      sWalletAddress,
+      typeof sWalletAddress
+    );
+    console.log("Received sEmail:", sEmail, typeof sEmail);
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -143,11 +166,13 @@ Controller.resendOtp = async (req, res) => {
 
     await oExistingUser.save();
 
-    const nOtpExpiresIn = new Date(oExistingUser.nOtpExpiryTime).toLocaleString();
-    
+    const nOtpExpiresIn = new Date(
+      oExistingUser.nOtpExpiryTime
+    ).toLocaleString();
+
     await services.send(
       "verifyEmail.ejs",
-      { otp: nOtp , nOtpExpiresIn },
+      { otp: nOtp, nOtpExpiresIn },
       {
         from: configObj.MAIL_FROM,
         to: sEmail,
@@ -162,15 +187,15 @@ Controller.resendOtp = async (req, res) => {
 
 Controller.verifyOtp = async (req, res) => {
   try {
-    let { sWalletAddress, sEmail , nOtp } = req.body;
+    const { sWalletAddress, sEmail, nOtp } = req.body;
 
-    console.log("sEmail " , sWalletAddress.sEmail, typeof sWalletAddress.sEmail);
-    
-    if (sWalletAddress && typeof sWalletAddress === 'object' && sWalletAddress.sEmail && sWalletAddress.nOtp && sWalletAddress.sWalletAddress ) {
-      sEmail = sWalletAddress.sEmail;
-      nOtp = Number(sWalletAddress.nOtp);
-      sWalletAddress = sWalletAddress.sWalletAddress;
-    }
+    console.log(
+      "Received sWalletAddress:",
+      sWalletAddress,
+      typeof sWalletAddress
+    );
+    console.log("Received sEmail:", sEmail, typeof sEmail);
+    console.log("Received nOtp:", nOtp, typeof nOtp);
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -186,8 +211,8 @@ Controller.verifyOtp = async (req, res) => {
     }
 
     const dCurrentTime = Date.now();
-    
-    if (oExistingUser.nOtp !== nOtp) {
+
+    if (oExistingUser.nOtp != nOtp) {
       return res.reply(messages.invalid("OTP"));
     }
 
@@ -197,13 +222,20 @@ Controller.verifyOtp = async (req, res) => {
 
     oExistingUser.sEmail = sEmail;
     oExistingUser.isEmailVerified = true;
-    oExistingUser.sUsername = ""
-    oExistingUser.nOtp = null; 
+    oExistingUser.sUsername = "";
+    oExistingUser.nOtp = null;
     oExistingUser.nOtpExpiryTime = null;
 
     await oExistingUser.save();
 
-    return res.reply(messages.successfully("Email verified successfully"), { sWalletAddress: oExistingUser.sWalletAddress, sToken: oExistingUser.sToken, isVerified: oExistingUser.isEmailVerified, sEmail: oExistingUser.sEmail  , sUsername : oExistingUser.sUsername || "" , sUserProfileImage: oExistingUser.sUserProfileImage });
+    return res.reply(messages.successfully("Email verified successfully"), {
+      sWalletAddress: oExistingUser.sWalletAddress,
+      sToken: oExistingUser.sToken,
+      isVerified: oExistingUser.isEmailVerified,
+      sEmail: oExistingUser.sEmail,
+      sUsername: oExistingUser.sUsername || "",
+      sUserProfileImage: oExistingUser.sUserProfileImage,
+    });
   } catch (error) {
     return res.reply(messages.server_error(`${error}`));
   }
@@ -219,18 +251,27 @@ Controller.setUsername = async (req, res) => {
       return res.reply(messages.not_found("User"));
     }
     const isUsernameExists = await User.findOne({ sUsername });
-    if (isUsernameExists && isUsernameExists.sWalletAddress !== sWalletAddress) {
+    if (
+      isUsernameExists &&
+      isUsernameExists.sWalletAddress !== sWalletAddress
+    ) {
       return res.reply(messages.already_exists("Username"));
     }
     oExistingUser.sUsername = sUsername;
 
     await oExistingUser.save();
 
-    return res.reply(messages.successfully("Username added"), { sWalletAddress: oExistingUser.sWalletAddress, sUsername: oExistingUser.sUsername, sEmail: oExistingUser.sEmail, isVerified: oExistingUser.isEmailVerified, sToken: oExistingUser.sToken  , sUserProfileImage: oExistingUser.sUserProfileImage });
+    return res.reply(messages.successfully("Username added"), {
+      sWalletAddress: oExistingUser.sWalletAddress,
+      sUsername: oExistingUser.sUsername,
+      sEmail: oExistingUser.sEmail,
+      isVerified: oExistingUser.isEmailVerified,
+      sToken: oExistingUser.sToken,
+      sUserProfileImage: oExistingUser.sUserProfileImage,
+    });
   } catch (error) {
     return res.reply(messages.server_error(`${error}`));
   }
 };
-
 
 module.exports = { Controller };

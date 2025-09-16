@@ -21,6 +21,7 @@ const { getMintContract, getMarketContract } = require("./contractInsatnce");
       marketContractInstance.on("TokenCancelListingSuccess",(tokenId,tokenAddress , currentlyListed ) => {
         handleCancelListingSuccessEvent(tokenId, tokenAddress, currentlyListed , io);
       });
+      
     } catch (error) {
       console.error("Error setting up event listener:", error);
     }

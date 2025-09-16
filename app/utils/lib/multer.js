@@ -1,3 +1,4 @@
+const { check } = require('express-validator');
 const multer = require('multer');
 
 const storage = multer.diskStorage({
@@ -10,7 +11,27 @@ const storage = multer.diskStorage({
     }
   })
 
-  const upload = multer({ storage })
+  const upload = multer({ storage , 
+    limits: { fileSize: 5 * 1024 * 1024  },
+    fileFilter: function (req, file, cb) {
+      checkFileType(file, cb);
+    },
+  })
+
+  function checkFileType(file, cb){
+    const fileTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'image/avif'
+    ]
+    if(fileTypes.includes(file.mimetype)){
+      cb(null, true);
+    } else {
+      cb(new Error("Invalid file type"), false);
+    }
+  }
 
 module.exports = upload
 

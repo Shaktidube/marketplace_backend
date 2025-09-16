@@ -29,68 +29,68 @@ controllers.getProfile = async (req, res) => {
 };
 
 controllers.uploadFile = async (req, res) => {
-  try {
-
-    const { sNftName, sDescription , nRoyalty , sTokenAddress } = req.body;
-
-    console.log("nRoyalty is :" , nRoyalty);
-
-    const photo_path = req.file ? req.file.path : null;
-    if (!req.file) {
-      return res.reply(messages.unprocessable_entity("Please upload a file"));
+      try {  
+        const { sNftName, sDescription , nRoyalty , sTokenAddress } = req.body;
+    
+        console.log("nRoyalty is :" , nRoyalty);
+    
+        const photo_path = req.file ? req.file.path : null;
+        if (!req.file) {
+          return res.reply(messages.unprocessable_entity("Please upload a file"));
+        }
+        
+        const responseData = {
+          file: req.file?.originalname,
+          url: `${photo_path}`,
+        };
+    
+        // upload on filebase
+        // if(responseData.url){
+        //   const path = responseData.url
+        //   const commandGetObject = new GetObjectCommand({
+        //     Bucket: configObj.FILEBASE_BUCKET_NAME,
+        //     Key: path,
+        //   });
+        //   const response = await s3.send(commandGetObject);
+        //   responseData.url = `ipfs://${response.Metadata?.cid}`;
+        // }
+        
+        // upload image on pinata 
+        const blob = new Blob([fs.readFileSync(photo_path)]);
+        const file = new File([blob], responseData.file, { type: req.file.mimetype })
+        const upload = await pinata.upload.public.file(file);
+        console.log("File uploaded to Pinata:", upload);
+        responseData.url = `https://gateway.pinata.cloud/ipfs/${upload.cid}`;
+    
+        const sImageUrlExists = await Nft.findOne({ sImageUrl: responseData.url });
+        if (sImageUrlExists) {
+          return res.reply(messages.already_exists("Image"));
+        }
+    
+        // upload metadata on pinata
+        const metadata = {
+          name: sNftName,
+          description: sDescription,
+          image: responseData.url,
+          Royalty : nRoyalty,
+          TokenAddress: sTokenAddress
+        };
+        
+        const metadataBlob = new Blob([JSON.stringify(metadata)], { type: "application/json" });
+        const metadataFile = new File([metadataBlob], `${sNftName}.json`, { type: "application/json" });
+        const metadataUpload = await pinata.upload.public.file(metadataFile);
+        console.log("Metadata uploaded to Pinata:", metadataUpload);
+    
+        return res.reply(messages.successfully("File uploaded successfully"), { sTokenAddress: metadata.TokenAddress, sNftName : metadata.name , sDescription: metadata.description, sImageUrl: responseData.url, sMetadataUrl: `https://gateway.pinata.cloud/ipfs/${metadataUpload.cid}` });
+      } catch (error) {
+        return res.reply(messages.server_error(`${error}`), error);
+      } finally {
+      if (req.file?.path) {
+        fs.unlinkSync(req.file.path);
+        console.log("Temporary file deleted:", req.file.path);
+      }
     }
-    
-    const responseData = {
-      file: req.file?.originalname,
-      url: `${photo_path}`,
-    };
 
-    // upload on filebase
-    // if(responseData.url){
-    //   const path = responseData.url
-    //   const commandGetObject = new GetObjectCommand({
-    //     Bucket: configObj.FILEBASE_BUCKET_NAME,
-    //     Key: path,
-    //   });
-    //   const response = await s3.send(commandGetObject);
-    //   responseData.url = `ipfs://${response.Metadata?.cid}`;
-    // }
-    
-    // upload image on pinata 
-    const blob = new Blob([fs.readFileSync(photo_path)]);
-    const file = new File([blob], responseData.file, { type: req.file.mimetype })
-    const upload = await pinata.upload.public.file(file);
-    console.log("File uploaded to Pinata:", upload);
-    responseData.url = `https://gateway.pinata.cloud/ipfs/${upload.cid}`;
-
-    const sImageUrlExists = await Nft.findOne({ sImageUrl: responseData.url });
-    if (sImageUrlExists) {
-      return res.reply(messages.already_exists("Image"));
-    }
-
-    // upload metadata on pinata
-    const metadata = {
-      name: sNftName,
-      description: sDescription,
-      image: responseData.url,
-      Royalty : nRoyalty,
-      TokenAddress: sTokenAddress
-    };
-    
-    const metadataBlob = new Blob([JSON.stringify(metadata)], { type: "application/json" });
-    const metadataFile = new File([metadataBlob], `${sNftName}.json`, { type: "application/json" });
-    const metadataUpload = await pinata.upload.public.file(metadataFile);
-    console.log("Metadata uploaded to Pinata:", metadataUpload);
-
-    return res.reply(messages.successfully("File uploaded successfully"), { sTokenAddress: metadata.TokenAddress, sNftName : metadata.name , sDescription: metadata.description, sImageUrl: responseData.url, sMetadataUrl: `https://gateway.pinata.cloud/ipfs/${metadataUpload.cid}` });
-  } catch (error) {
-    return res.reply(messages.server_error(`${error}`), error);
-  } finally {
-    if (req.file) {
-      fs.unlinkSync(req.file.path);
-      console.log("Tempor ary file deleted:", req.file.path);  
-  }
-} 
 };
 
 controllers.updateUserProfileImage = async (req, res) => {
@@ -119,7 +119,7 @@ controllers.updateUserProfileImage = async (req, res) => {
   } catch (error) {
     return res.reply(messages.server_error(`${error}`), error);
   } finally {
-    if (req.file) {
+    if (req.file?.path) {
       fs.unlinkSync(req.file.path);
       console.log("Temporary file deleted:", req.file.path);
     }
@@ -256,7 +256,6 @@ controllers.updateNftById = async (req, res) => {
   }
 }
 
-
 controllers.liveSelllNfts = async(req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -291,4 +290,5 @@ controllers.liveSelllNfts = async(req, res) => {
     return res.reply(messages.server_error(`${error}`), error);
   }
 }
+
 module.exports = controllers; 

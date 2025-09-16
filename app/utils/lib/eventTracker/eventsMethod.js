@@ -12,17 +12,12 @@ const handleTransferEvent = async (from, to, tokenId, event, io) => {
       `Transfer: from : ${from} to:  ${to}, tokenId ${tokenId}, filter:`,
       event.filter
     );
-
     console.log("Event Obj", event.log.address);
 
     if (from !== ethers.ZeroAddress && to !== ethers.ZeroAddress) {
-      // const isNftExist = await Nft.findOne({ nTokenId: tokenId.toString() });
-      // if (isNftExist) {
-      //   console.log("User-to-user transfer detected!!!, skip!!!");
-      //   return;
-      // }
-
-      const txResponse = await httpProvider.getTransaction(event.log.transactionHash);
+      const txResponse = await httpProvider.getTransaction(
+        event.log.transactionHash
+      );
       console.log("Transaction Response:", txResponse);
 
       const market = txResponse.to;
@@ -34,22 +29,17 @@ const handleTransferEvent = async (from, to, tokenId, event, io) => {
       }
 
       const oUpdateNft = await Nft.findOneAndUpdate(
-        { nTokenId: tokenId.toString() , sTokenAddress: event.log.address },
-        { sCurrentOwner: to , isApprovedForSale: false },
+        { nTokenId: tokenId.toString(), sTokenAddress: event.log.address },
+        { sCurrentOwner: to, isApprovedForSale: false }
       );
 
       const marketContractInstance = await getMarketContract();
-      const isListed = await marketContractInstance.listings(from , oUpdateNft.sTokenAddress , tokenId)
+      const isListed = await marketContractInstance.listings(
+        from,
+        oUpdateNft.sTokenAddress,
+        tokenId
+      );
       console.log("isListed", isListed);
-
-      // if(isListed) {
-      //   const mediaContractInstance = await getMediaContract();
-      //   console.log("wallet", wallet);
-      //   const mediaContractWithSigner = mediaContractInstance.connect(wallet);
-      //   const cancelTx = await mediaContractWithSigner.cancelSale(oUpdateNft.sTokenAddress , tokenId);
-      //   await cancelTx.wait();
-      //   console.log("Listing cancelled successfully during transfer");
-      // }
 
       if (oUpdateNft) {
         console.log("NFT owner updated successfully after transfer");
@@ -61,12 +51,18 @@ const handleTransferEvent = async (from, to, tokenId, event, io) => {
         });
         return;
       }
-    } else if(to === ethers.ZeroAddress) {
+    } else if (to === ethers.ZeroAddress) {
       console.log("Burn event detected");
       //  delete nft from db
-      await Nft.deleteOne({ nTokenId: tokenId.toString() , sTokenAddress: event.log.address });
+      await Nft.deleteOne({
+        nTokenId: tokenId.toString(),
+        sTokenAddress: event.log.address,
+      });
       console.log("NFT deleted successfully after burn");
-      io.emit("BurnEventDetected", { tokenId: tokenId.toString(), sTokenAddress: event.log.address });
+      io.emit("BurnEventDetected", {
+        tokenId: tokenId.toString(),
+        sTokenAddress: event.log.address,
+      });
       return;
     }
     const contractInstance = await getMintContract();
@@ -159,9 +155,6 @@ const handleListedEvent = async (
       sTokenAddress: tokenAddress,
     });
 
-    // const priceInEth = parseFloat(ethers.utils.formatEther(price));
-    // console.log("Price in ETH:", priceInEth);
-
     const priceInEth = ethers.formatEther(price);
     console.log("Price in ETH:", priceInEth);
 
@@ -202,7 +195,7 @@ const handleListedEvent = async (
         console.error("Failed to fetch token metadata:", response.statusText);
         return;
       }
-      
+
       const metadata = await response.json();
       console.log("Token Metadata:", metadata);
 

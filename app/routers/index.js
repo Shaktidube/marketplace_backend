@@ -2,7 +2,6 @@
   // const app = express();
   const routes = require("./routes");
   const configObj = require("../../config/config");
-  const updateBalance = require("../../cronjob");
   const cors = require("cors")
   const ethers = require("ethers");
 
