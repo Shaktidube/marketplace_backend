@@ -1,4 +1,3 @@
-const { check } = require('express-validator');
 const multer = require('multer');
 
 const storage = multer.diskStorage({

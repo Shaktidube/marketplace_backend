@@ -3,6 +3,7 @@ const ethers = require("ethers");
 const { getMintContract, getMarketContract } = require("./contractInsatnce");
 const abi = require("../../../../abis/mintAbi.json");
 const configObj = require("../../../../config/config");
+const io = require("../socket");
 
 const httpProvider = new ethers.JsonRpcProvider(configObj.JSON_RPC_PROVIDER);
 
@@ -154,6 +155,8 @@ const handleListedEvent = async (
       nTokenId: tokenId.toString(),
       sTokenAddress: tokenAddress,
     });
+
+    console.log("nft price" , price);
 
     const priceInEth = ethers.formatEther(price);
     console.log("Price in ETH:", priceInEth);
@@ -323,9 +326,195 @@ const handleCancelListingSuccessEvent = async (
   }
 };
 
+const handleStartAuction = async (
+  tokenId,
+  startTime,
+  endTime,
+  tokenAddress,
+  seller,
+  basePrice,
+  settlementTime
+) => {
+  console.log(
+    `AuctionStarted event detected: tokenId ${tokenId}, startTime ${startTime}, endTime ${endTime}, tokenAddress ${tokenAddress}, seller ${seller}, basePrice ${basePrice}, settlementTime ${settlementTime}`
+  );
+
+  try {
+    const isNftExist = await Nft.findOne({
+      nTokenId: tokenId.toString(),
+      sTokenAddress: tokenAddress,
+    });
+
+    console.log("nft base price" , basePrice);
+
+    const priceInEth = ethers.formatEther(basePrice);
+    console.log("Price in ETH:", priceInEth);
+
+    if (isNftExist) {
+      await Nft.updateOne(
+        { nTokenId: tokenId.toString(), sTokenAddress: tokenAddress },
+        {
+          isApprovedForAuction: true,
+          oAuctionDetails : {
+            nBasePrice: priceInEth,
+            dStartTime: startTime.toString(),
+            dEndTime: endTime.toString(),
+            nHighestBid: "",
+            sHighestBidder: "",
+            sSettlementTime: settlementTime.toString(),
+            bAuctionEnded: false,
+          }
+        }
+      );  
+      console.log("NFT auction status updated successfully after starting auction");
+
+      io.emit("AuctionStartedEventDetected", {
+        tokenId: tokenId.toString(),
+        tokenAddress,
+        startTime: startTime.toString(),
+        endTime: endTime.toString(),
+        seller,
+        basePrice: basePrice.toString()
+      });
+    }
+  } catch (error) {
+    console.log("Error in AuctionStarted event:", error);
+  }
+};
+
+const handleNewBidPlaced = async (tokenAddress, tokenId, bidder, NEWbid) => {
+  console.log(
+    `NewBidPlaced event detected: tokenAddress ${tokenAddress}, tokenId ${tokenId}, bidder ${bidder}, NEWbid ${NEWbid}`
+  );
+
+  try {
+
+    console.log("nft base price" , NEWbid);
+
+    const newBidInEth = ethers.formatEther(NEWbid);
+    console.log("newBidInEth:", newBidInEth);
+
+    const isNftExist = await Nft.findOne({
+      nTokenId: tokenId.toString(),
+      sTokenAddress: tokenAddress,
+    });
+
+
+
+    if (isNftExist) {
+      await Nft.updateOne(
+        { nTokenId: tokenId.toString(), sTokenAddress: tokenAddress },
+        {
+          oAuctionDetails : {
+            ...isNftExist.oAuctionDetails,
+            nHighestBid: newBidInEth,
+            sHighestBidder: bidder,
+          }
+        }
+      );
+      console.log("NFT highest bid updated successfully after new bid placed");
+    }
+
+    io.emit("NewBidPlacedEventDetected", {
+      tokenAddress,
+      tokenId: tokenId.toString(),
+      bidder,
+      NEWbid: NEWbid.toString()
+    });
+  } catch (error) {
+    console.log("Error in newPlaceBid event:", error);
+  }
+};
+
+const handleClaimNft = async (tokenAddress, tokenId, winner, highestBid) => {
+  console.log(
+    `ClaimNft event detected: tokenAddress ${tokenAddress}, tokenId ${tokenId}, winner ${winner}, highestBid ${highestBid}`
+  );
+  try {
+    const isNftExist = await Nft.findOne({
+      nTokenId: tokenId.toString(),
+      sTokenAddress: tokenAddress,
+    });
+
+    if (isNftExist) {
+      await Nft.updateOne(
+        { nTokenId: tokenId.toString(), sTokenAddress: tokenAddress },
+        {
+          sCurrentOwner: winner,
+          isApprovedForAuction: false,
+          oAuctionDetails : {
+            nBasePrice: "0",
+            dStartTime: null,
+            dEndTime: null,
+            nHighestBid: "0",
+            sHighestBidder: "",
+            sSettlementTime: null,
+            bAuctionEnded: false,
+          }
+        }
+      );
+      console.log("NFT auction status updated successfully after claiming NFT");
+
+      io.emit("ClaimNftEventDetected", {
+        tokenId: tokenId.toString(),
+        tokenAddress,
+        winner,
+        highestBid: highestBid.toString(),
+      });
+    }
+  } catch (error) {
+    console.log("Error in ClaimNft event:", error);
+  }
+};
+const handleReclaimNFt = async (tokenId , tokenAddress, tokenOwner) => {
+  console.log(
+    `ReclaimNft event detected: tokenAddress ${tokenAddress}, tokenId ${tokenId}, tokenOwner ${tokenOwner}`
+  );
+  try {
+    const isNftExist = await Nft.findOne({
+      nTokenId: tokenId.toString(),
+      sTokenAddress: tokenAddress,
+    });
+
+    console.log(isNftExist);
+
+    if (isNftExist) {
+      await Nft.updateOne(
+        { nTokenId: tokenId.toString(), sTokenAddress: tokenAddress },
+        {
+          sCurrentOwner: tokenOwner,
+          isApprovedForAuction: false,
+          oAuctionDetails : {
+            nBasePrice: "0",
+            dStartTime: null,
+            dEndTime: null,
+            nHighestBid: "0",
+            sHighestBidder: "",
+            sSettlementTime: null,
+            bAuctionEnded: false,
+          }
+        }
+      );
+      console.log("NFT auction status updated successfully after re-claiming NFT");
+
+      io.emit("ReClaimNftEventDetected", {
+        tokenId: tokenId.toString(),
+        tokenAddress,
+        tokenOwner,
+      });
+    }
+  } catch (error) {
+    console.log("Error in ReClaimNft event:", error);
+  }
+};
+
 module.exports = {
   handleTransferEvent,
   handleListedEvent,
   handleBuySuccessEvent,
   handleCancelListingSuccessEvent,
+  handleStartAuction,
+  handleNewBidPlaced,
+  handleClaimNft,
+  handleReclaimNFt
 };

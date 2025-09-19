@@ -58,6 +58,43 @@ const nftSchema = mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    isApprovedForAuction:{
+        type: Boolean,
+        default: false,
+    },
+    oAuctionDetails:{
+        nBasePrice: {
+            type: String,
+            default: "0",
+            trim: true,
+        },
+        dStartTime: {
+            type: String,
+            default: null,
+        },
+        dEndTime: {
+            type: String,
+            default: null,
+        },
+        nHighestBid: {
+            type: String,
+            default: "0",
+            trim: true,
+        },
+        sHighestBidder: {
+            type: String,
+            default: "",
+            trim: true,
+        },
+        sSettlementTime: {
+            type: String,
+            default: null,
+        },
+        bAuctionEnded: {
+            type: Boolean,
+            default: false,
+        },
+    },
 },{timestamps:true})
 
 const Nft = mongoose.model("nfts",nftSchema)

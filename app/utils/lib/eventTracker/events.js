@@ -1,4 +1,4 @@
-const { handleTransferEvent, handleListedEvent, handleBuySuccessEvent, handleCancelListingSuccessEvent } = require("./eventsMethod");
+const { handleTransferEvent, handleListedEvent, handleBuySuccessEvent, handleCancelListingSuccessEvent, handleStartAuction, handleNewBidPlaced, handleClaimNft, handleReclaimNFt } = require("./eventsMethod");
 const { getMintContract, getMarketContract } = require("./contractInsatnce");
 
   const contractEventListener = async (io) => {
@@ -20,6 +20,22 @@ const { getMintContract, getMarketContract } = require("./contractInsatnce");
 
       marketContractInstance.on("TokenCancelListingSuccess",(tokenId,tokenAddress , currentlyListed ) => {
         handleCancelListingSuccessEvent(tokenId, tokenAddress, currentlyListed , io);
+      });
+
+      marketContractInstance.on("AuctionStarted",(tokenId,startTime,endTime ,tokenAddress  , seller ,basePrice , settlementTime ) => {
+        handleStartAuction(tokenId,startTime,endTime ,tokenAddress  , seller ,basePrice , settlementTime);
+      });
+
+      marketContractInstance.on("NewBidPlaced",(tokenAddress,tokenId, bidder, NEWbid ) => {
+        handleNewBidPlaced(tokenAddress,tokenId, bidder, NEWbid);
+      });
+
+      marketContractInstance.on("ClaimNft",(tokenAddress,tokenId, winner, highestBid ) => {
+        handleClaimNft(tokenAddress,tokenId, winner, highestBid);
+      });
+      
+      marketContractInstance.on("reclaimNft",(tokenId , tokenAddress, tokenOwner) => {
+        handleReclaimNFt(tokenId , tokenAddress, tokenOwner);
       });
       
     } catch (error) {

@@ -47,7 +47,6 @@ const verifyToken = (req, res, next) => {
       req.userid = decode._id;
       req.userEmail = decode.sEmail;
       // console.log("decode user is :", req.userEmail);
-      
     }
     return next();
   } catch (error) {

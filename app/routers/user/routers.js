@@ -1,7 +1,6 @@
 const express = require("express");
 const controllers = require("./controllers");
 const verifyToken = require("../../middleware/auth");
-const authorizeRoles = require("../../middleware/roleMiddleware");
 const validators = require("./validators");
 const upload = require("../../utils/lib/multer");
 
