@@ -22,7 +22,6 @@ validators.resendOtp = [
     body('sEmail').not().isEmpty().isEmail().withMessage('email is required'),
 ];
 
-
 validators.setUsername = [
     body('sWalletAddress').not().isEmpty().withMessage('Wallet Address is required'),
     body('sUsername').not().isEmpty().withMessage('Username is required').isLength({ min: 1 }).withMessage('Username must be at least 1 characters long'),

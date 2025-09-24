@@ -308,6 +308,7 @@ const handleCancelListingSuccessEvent = async (
       await Nft.updateOne(
         { nTokenId: tokenId.toString(), sTokenAddress: tokenAddress },
         {
+          nNftPrice: 0,
           isApprovedForSale: currentlyListed,
         }
       );

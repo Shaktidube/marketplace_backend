@@ -165,45 +165,91 @@ controllers.getYourNfts = async (req, res) => {
   } catch (error) {
     return res.reply(messages.server_error(`${error}`), error);
   }
-};
+};  
 
-controllers.getAllNfts = async(req, res) => {
+controllers.getAllNfts = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const search = req.query.search || '';
-    const sortOrder = parseInt(req.query.sortOrder) || 1;
+    const sortOrder = parseInt(req.query.sortOrder) || 1; 
     const sortField = req.query.sortField || 'sNftName';
     const skip = (page - 1) * limit;
 
-    const searchQuery = search ? { $or: [ { sNftName: { $regex: search , $options: 'i' } }, { nNftDescription: { $regex: search , $options: 'i' } } ] } : {}
+    // const searchQuery = search
+    //   ? {
+    //       $or: [
+    //         { sNftName: { $regex: search, $options: 'i' } },
+    //         { nNftDescription: { $regex: search, $options: 'i' } },
+    //       ],
+    //     }
+    //   : {};
 
-    const sortQuery = { [sortField]: sortOrder };
-    console.log(sortQuery);
+    // const pipeline = [
+    //   {
+    //     $match: searchQuery
+    //   },
+    //   {
+    //     $addFields: {
+    //       effectivePrice: {
+    //         $cond: {
+    //           if: { $gt: ["$oAuctionDetails.nHighestBid", "0"] }, 
+    //           then: { $toDouble: "$oAuctionDetails.nHighestBid" },
+    //           else: {
+    //             $cond: {
+    //               if: { $gt: ["$nNftPrice", "0"] }, 
+    //               then: { $toDouble: "$nNftPrice" },
+    //               else: { $toDouble: "$oAuctionDetails.nBasePrice" }, 
+    //             },
+    //           },
+    //         },
+    //       },
+    //     },
+    //   },
+    //   // Sort based on sortField
+    //   {
+    //     $sort: {
+    //       [sortField === 'price' ? 'effectivePrice' : sortField]: sortOrder,
+    //     },
+    //   },
+    //   // Skip and limit for pagination
+    //   { $skip: skip },
+    //   { $limit: limit },
+    //   // Project to exclude unwanted fields
+    //   {
+    //     $project: {
+    //       sFromAddress: 0,
+    //       sEventName: 0,
+    //       sDescription: 0,
+    //       sTokenUri: 0,
+    //       createdAt: 0,
+    //       updatedAt: 0,
+    //       __v: 0,
+    //       effectivePrice: 0,
+    //     },
+    //   },
+    // ];
 
-    const totalNfts = await Nft.countDocuments(searchQuery);
+    const nfts = await Nft.find({}).sort({ updatedAt: -1 }).skip(skip).limit(limit);
 
-    const nfts = await Nft.find(searchQuery)
-    .sort({ updatedAt: -1 })  
-      .skip(skip)
-      .limit(limit).select("-sFromAddress -sEventName -sDescription -sTokenUri -createdAt -updatedAt -__v");
+    const totalNfts = await Nft.countDocuments();
 
     const totalPages = Math.ceil(totalNfts / limit);
 
-    if( nfts.length === 0){
-      return res.reply(messages.not_found("NFTS") , {
-        nfts: nfts,
-        page: page,
-        totalPages: totalPages,
-        totalNfts: totalNfts,
+    if (nfts.length === 0) {
+      return res.reply(messages.not_found("NFTs"), {
+        nfts,
+        page,
+        totalPages,
+        totalNfts,
       });
     }
 
     return res.reply(messages.successfully("NFTs retrieved"), {
-      nfts: nfts,
-      page: page,
-      totalPages: totalPages,
-      totalNfts: totalNfts,
+      nfts,
+      page,
+      totalPages,
+      totalNfts,
     });
   } catch (error) {
     return res.reply(messages.server_error(`${error}`), error);
@@ -217,7 +263,7 @@ controllers.getNftById = async (req, res) => {
       return res.reply(messages.bad_request("NFT ID is required"));
     }
 
-    const nft = await Nft.findById(nftId).select("-sFromAddress -sEventName -sTokenUri -createdAt -updatedAt -__v");
+    const nft = await Nft.findById(nftId).select("-sFromAddress -sEventName -createdAt -updatedAt -__v");
     if (!nft) {
       return res.reply(messages.not_found("NFT not found"));
     }
