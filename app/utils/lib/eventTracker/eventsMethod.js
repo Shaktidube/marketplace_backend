@@ -467,6 +467,7 @@ const handleClaimNft = async (tokenAddress, tokenId, winner, highestBid) => {
     console.log("Error in ClaimNft event:", error);
   }
 };
+
 const handleReclaimNFt = async (tokenId , tokenAddress, tokenOwner) => {
   console.log(
     `ReclaimNft event detected: tokenAddress ${tokenAddress}, tokenId ${tokenId}, tokenOwner ${tokenOwner}`

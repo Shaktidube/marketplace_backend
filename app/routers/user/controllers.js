@@ -91,7 +91,7 @@ controllers.uploadFile = async (req, res) => {
       }
     }
 
-};
+};  
 
 controllers.updateUserProfileImage = async (req, res) => {
   try {
